@@ -1,75 +1,112 @@
-/*
-* Problem 1: Escape Room
-* 
-* V1.0
-* 10/10/2019
-* Copyright(c) 2019 PLTW to present. All rights reserved
-*/
 import java.util.Scanner;
 
-/**
- * Create an escape room game where the player must navigate
- * to the other side of the screen in the fewest steps, while
- * avoiding obstacles and collecting prizes.
- */
 public class EscapeRoom
 {
-  /* TO-DO: Process game commands from user input:
-      right, left, up, down: move player size of move, m, if player try to go off grid or bump into wall, score decreases
-      jump over 1 space: player cannot jump over walls
-      pick up prize: score increases, if there is no prize, penalty
-      help: display all possible commands
-      end: reach the far right wall, score increase, game ends, if game ends without reaching far right wall, penalty
-      replay: shows number of player steps and resets the board, player or another player can play the same board
-        
-      if player land on a trap, spring a trap to increase score: the program must first check if there is a trap, if none exists, penalty
-      Note that you must adjust the score with any method that returns a score
-      Optional: create a custom image for player - use the file player.png on disk
-    */
+    public static void main(String[] args)
+    {      
+        // Welcome message
+        System.out.println("Welcome to EscapeRoom!");
+        System.out.println("Get to the other side of the room, avoiding walls and invisible traps,");
+        System.out.println("pick up all the prizes.\n");
 
-  public static void main(String[] args) 
-  {      
-    // welcome message
-    System.out.println("Welcome to EscapeRoom!");
-    System.out.println("Get to the other side of the room, avoiding walls and invisible traps,");
-    System.out.println("pick up all the prizes.\n");
-    
-    GameGUI game = new GameGUI();
-    game.createBoard();
+        GameGUI game = new GameGUI();
+        game.createBoard();
 
-    // size of move
-    int m = 60; 
-    // individual player moves
-    int px = 0;
-    int py = 0; 
-    
-    int score = 0;
+        final int m = 60;
+        int score = 0;
 
-    Scanner in = new Scanner(System.in);
-    String[] validCommands = { "right", "left", "up", "down", "r", "l", "u", "d",
-    "jump", "jr", "jumpleft", "jl", "jumpup", "ju", "jumpdown", "jd",
-    "pickup", "p", "quit", "q", "replay", "help", "?"};
-  
-    // set up game
-    boolean play = true;
-    while (play)
-    {
+        Scanner in = new Scanner(System.in);
+        String[] validCommands = {
+            "right","left","up","down","r","l","u","d",
+            "jump","jr","jumpleft","jl","jumpup","ju","jumpdown","jd",
+            "pickup","p","quit","q","replay","help","?"
+        };
 
-      // get user command and validate
-      System.out.print("Enter command:");
-      String input = UserInput.getValidInput(validCommands);
+        boolean play = true;
+        while (play)
+        {
+            System.out.print("Enter command: ");
+            String input = UserInput.getValidInput(validCommands);
 
-	    /* process user commands*/
-    
-      /* uncomment when user quits */
-      // play = false;
+            int deltaScore = 0; // track score changes per action
+
+            switch (input) {
+                case "right": case "r":
+                    deltaScore += game.movePlayer(m, 0);
+                    break;
+                case "left":  case "l":
+                    deltaScore += game.movePlayer(-m, 0);
+                    break;
+                case "up":    case "u":
+                    deltaScore += game.movePlayer(0, -m);
+                    break;
+                case "down":  case "d":
+                    deltaScore += game.movePlayer(0, m);
+                    break;
+                case "jump": case "jr":
+                    deltaScore += game.movePlayer(2*m, 0);
+                    break;
+                case "jumpleft": case "jl":
+                    deltaScore += game.movePlayer(-2*m, 0);
+                    break;
+                case "jumpup": case "ju":
+                    deltaScore += game.movePlayer(0, -2*m);
+                    break;
+                case "jumpdown": case "jd":
+                    deltaScore += game.movePlayer(0, 2*m);
+                    break;
+                case "pickup": case "p":
+                    deltaScore += game.pickupPrize();
+                    break;
+                case "replay":
+                    deltaScore += game.replay();
+                    System.out.println("Board reset.");
+                    game.showReplayScreen();  // NEW: Show replay screen
+                    break;
+                case "help": case "?":
+                    showTextHelp();
+                    break;
+                case "quit": case "q":
+                    play = false;
+                    break;
+            }
+
+            score += deltaScore;
+
+            // LOSS: Trap hit
+            if (game.isTrap(0, 0)) {
+                score += game.springTrap(0, 0);
+                System.out.println("GAME OVER! You hit a trap!");
+                game.showGameOverScreen(); // Loss screen
+                play = false;
+            }
+
+            // WIN: All prizes collected or custom win logic
+            if (game.didWin()) {  // Assume this method is defined in GameGUI
+                System.out.println("CONGRATULATIONS! You escaped!");
+                game.showWinScreen(); // Win screen
+                play = false;
+            }
+
+            System.out.println("Current score: " + score);
+        }
+
+        // Final scoring
+        score += game.endGame();
+
+        System.out.println("Final score: " + score);
+        System.out.println("Steps taken: " + game.getSteps());
     }
 
-    score += game.endGame();
-
-    System.out.println("score=" + score);
-    System.out.println("steps=" + game.getSteps());
-  }
+    private static void showTextHelp() {
+        System.out.println("\n=== Commands ===");
+        System.out.println("right/left/up/down  (r/l/u/d) : move one space");
+        System.out.println("jump/jr/jl/ju/jd              : jump two spaces (cannot cross walls)");
+        System.out.println("pickup or p                   : pick up prize at current spot");
+        System.out.println("replay                        : reset board and steps");
+        System.out.println("quit or q                     : end the game");
+        System.out.println("help or ?                     : show this list\n");
+    }
 }
 
         
